@@ -4,9 +4,9 @@ const pg = require('pg');
 const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3040;
 const app = express();
-const conString = process.env.DATABASE_URL || 'postgres://veslan:15e4tkmhkeih@localhost:5432/kilovolt';// TODO: Don't forget to set your own conString
+const conString = process.env.DATABASE_URL || 'postgres://chris:test@localhost:5432/kilovolt';// TODO: Don't forget to set your own conString
 const client = new pg.Client(conString);
 client.connect();
 client.on('error', function(error) {
@@ -48,29 +48,31 @@ app.post('/articles', function(request, response) {
     // TODO: Write a SQL query to insert a new ***author***, ON CONFLICT DO NOTHING
     // TODO: Add author and "authorUrl" as data for the SQL query to interpolate
     `INSERT INTO
-    author(title, author, "authorUrl", category, "publishedOn", body)`,
+    authors(author, "authorUrl")
+    VALUES ($1, $2)
+    ON CONFLICT DO NOTHING;`,
     [
-      request.body.title,
       request.body.author,
-      request.body.authorUrl,
-      request.body.category,
-      request.body.publishedOn,
-      request.body.body,
+      request.body.authorUrl
     ]
   )
   .then(function() {
     // TODO: Write a SQL query to insert a new ***article***, using a sub-query to retrieve the author_id from the authors table
     // TODO: Add the required values from the request as data for the SQL query to interpolate
-    `INSERT INTO
-    articles(title, author, "authorUrl", category, "publishedOn", body)`,
-    [
-      request.body.title,
-      request.body.author,
-      request.body.authorUrl,
-      request.body.category,
-      request.body.publishedOn,
-      request.body.body,
-    ]
+    client.query(
+      `INSERT INTO
+      articles(author_id, title, category, "publishedOn", body)
+      SELECT author_id, $1, $2, $3, $4
+      FROM authors
+      WHERE author=$5;`,
+      [
+        request.body.title,
+        request.body.category,
+        request.body.publishedOn,
+        request.body.body,
+        request.body.author
+      ]
+    )
   })
   .then(function() {
     response.send('Insert complete')
@@ -84,15 +86,32 @@ app.put('/articles/:id', function(request, response) {
   client.query(
   // TODO: Write a SQL query to update an ***author*** record
   // TODO: Add the required values from the request as data for the SQL query to interpolate
-    `Thing1`,
-    [Thing2]
+    `UPDATE authors
+    SET
+      author=$1, "authorUrl"=$2
+    WHERE author_id=$3;`,
+    [
+      request.body.author,
+      request.body.authorUrl,
+      request.body.author_id
+    ]
   )
   .then(function() {
     // TODO: Write a SQL query to update an **article*** record
     // TODO: Add the required values from the request as data for the SQL query to interpolate
     client.query(
-      `Thing1`,
-      [Thing2]
+        `UPDATE articles
+      SET
+        title=$1, category=$2, "publishedOn"=$3, body=$4
+      WHERE article_id=$5;
+      `,
+      [
+        request.body.title,
+        request.body.category,
+        request.body.publishedOn,
+        request.body.body,
+        request.params.id
+      ]
     )
   })
   .then(function() {
