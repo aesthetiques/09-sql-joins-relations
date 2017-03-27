@@ -103,7 +103,7 @@ app.put('/articles/:id', function(request, response) {
         `UPDATE articles
       SET
         author_id=$1, title=$2, category=$3, "publishedOn"=$4, body=$5
-      WHERE article_id$6;`,
+      WHERE article_id=$6;`,
       [
         request.body.author_id,
         request.body.title,
