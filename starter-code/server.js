@@ -34,7 +34,8 @@ app.get('/articles', function(request, response) {
   // TODO: Write a SQL query which joins all data from articles and authors tables on the author_id value of each
   client.query(`SELECT * FROM articles
                 INNER JOIN authors
-                ON articles.author_id=authors.author_id;`)
+                ON articles.author_id=authors.author_id;`
+              )
   .then(function(result) {
     response.send(result.rows);
   })
@@ -44,10 +45,9 @@ app.get('/articles', function(request, response) {
 });
 
 app.post('/articles', function(request, response) {
-  client.query(
     // TODO: Write a SQL query to insert a new ***author***, ON CONFLICT DO NOTHING
     // TODO: Add author and "authorUrl" as data for the SQL query to interpolate
-    `INSERT INTO
+  client.query(`INSERT INTO
     authors(author, "authorUrl")
     VALUES ($1, $2)
     ON CONFLICT DO NOTHING;`,
@@ -102,10 +102,10 @@ app.put('/articles/:id', function(request, response) {
     client.query(
         `UPDATE articles
       SET
-        title=$1, category=$2, "publishedOn"=$3, body=$4
-      WHERE article_id=$5;
-      `,
+        author_id=$1, title=$2, category=$3, "publishedOn"=$4, body=$5
+      WHERE article_id$6;`,
       [
+        request.body.author_id,
         request.body.title,
         request.body.category,
         request.body.publishedOn,
